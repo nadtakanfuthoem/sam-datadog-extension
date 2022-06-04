@@ -1,5 +1,15 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Transform: AWS::Serverless-2016-10-31
+Transform: 
+  - AWS::Serverless-2016-10-31
+  - Name: DatadogServerless
+    Condition: RetainCreatedResources
+    Parameters:
+      stackName: !Ref "AWS::StackName"
+      apiKeySecretArn: "arn:aws:secretsmanager:us-east-1:123:secret:DdApiSecretKey-abc"
+      nodeLayerVersion: "78" # https://github.com/DataDog/datadog-lambda-js/releases
+      extensionLayerVersion: "22" # https://github.com/DataDog/datadog-lambda-extension/releases/tag/v22
+      tags: aurora-domain:warrants, warrants-${EnvironmentType}, tyler-account:warrants-${EnvironmentType}, level:${EnvironmentType}, system:jpp
+      
 Description: >
   sam-datadog-extension
 
@@ -9,6 +19,18 @@ Description: >
 Globals:
   Function:
     Timeout: 3
+
+Parameters:
+  EnvironmentType:
+    Type: String
+    Default: sandbox
+
+Conditions:
+  CreateSandboxResources:
+    !Equals [!Ref EnvironmentType, sandbox]
+  RetainCreatedResources:
+    !Not
+      - Condition: CreateSandboxResources
 
 Resources:
   HelloWorldFunction:
